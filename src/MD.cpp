@@ -476,11 +476,6 @@ double Potential()
                 {
                     r2 += (r[i][k] - r[j][k]) * (r[i][k] - r[j][k]);
                 }
-                // loop unroll to speed this up
-                // r2 += (r[i][0] - r[j][0]) * (r[i][0] - r[j][0]);
-                // r2 += (r[i][1] - r[j][1]) * (r[i][1] - r[j][1]);
-                // r2 += (r[i][2] - r[j][2]) * (r[i][2] - r[j][2]);
-
                 rnorm = sqrt(r2);
                 quot = sigma / rnorm;
                 term1 = pow(quot, 12.);
