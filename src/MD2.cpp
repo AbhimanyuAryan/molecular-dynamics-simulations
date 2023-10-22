@@ -476,9 +476,10 @@ double Potential()
                 {
                     r2 += (r[i][k] - r[j][k]) * (r[i][k] - r[j][k]);
                 }
-
-                term1 = (1 / r2) * (1 / r2) * (1 / r2) * (1 / r2) * (1 / r2) * (1 / r2);
-                term2 = (1 / r2) * (1 / r2) * (1 / r2);
+                rnorm = sqrt(r2);
+                quot = sigma / rnorm;
+                term1 = pow(quot, 12.);
+                term2 = pow(quot, 6.);
 
                 Pot += 4 * epsilon * (term1 - term2);
             }
