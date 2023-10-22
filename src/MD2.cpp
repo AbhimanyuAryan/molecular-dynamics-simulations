@@ -457,31 +457,31 @@ double Kinetic() { //Write Function here!
 
 
 // Function to calculate the potential energy of the system
-double Potential() {
-    double quot, r2, rnorm, term1, term2, Pot;
-    int i, j, k;
-    
-    Pot=0.;
-    for (i=0; i<N; i++) {
-        for (j=0; j<N; j++) {
-            
-            if (j!=i) {
-                r2=0.;
-                for (k=0; k<3; k++) {
-                    r2 += (r[i][k]-r[j][k])*(r[i][k]-r[j][k]);
-                }
-                rnorm=sqrt(r2);
-                quot=sigma/rnorm;
-                term1 = pow(quot,12.);
-                term2 = pow(quot,6.);
-                
-                Pot += 4*epsilon*(term1 - term2);
-                
-            }
+double Potential()
+{
+    double quot, r2, term1, term2, Pot, mult1, mult2, mult3;
+    int i, j;
+
+    Pot = 0.;
+    for (i = 0; i < N; i++)
+    {
+        for (j = i + 1; j < N; j++)
+        {
+            r2 = 0.;
+            mult1 = (r[i][0] - r[j][0]);
+            mult2 = (r[i][1] - r[j][1]);
+            mult3 = (r[i][2] - r[j][2]);
+
+            r2 = mult1 * mult1 + mult2 * mult2 + mult3 * mult3;
+
+            quot = sigma / r2;
+            term2 = quot * quot * quot;
+            term1 = term2 * term2;
+            Pot += 4 * epsilon * (term1 - term2);
         }
     }
-    
-    return Pot;
+
+    return 2 * Pot;
 }
 
 

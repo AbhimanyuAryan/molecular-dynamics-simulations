@@ -2,7 +2,7 @@ CC = g++
 SRC = src/
 CFLAGS = -Wall -pg -O2
 
-.DEFAULT_GOAL = MD.exe
+.DEFAULT_GOAL = MD2.exe
 
 test:
 	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
