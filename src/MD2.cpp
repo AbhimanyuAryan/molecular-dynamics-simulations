@@ -71,7 +71,7 @@ void initialize();
 double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-void computeAccelerations();
+
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -83,6 +83,7 @@ double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
+// compute acceleration and potential merged
 void calculatePotentialAndAcceleration();
 
 int main()
