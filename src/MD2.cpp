@@ -423,7 +423,6 @@ double MeanSquaredVelocity()
 
     for (int i = 0; i < N; i++)
     {
-
         vx2 = vx2 + v[i][0] * v[i][0];
         vy2 = vy2 + v[i][1] * v[i][1];
         vz2 = vz2 + v[i][2] * v[i][2];
@@ -496,8 +495,8 @@ double Potential()
 void computeAccelerations()
 {
     int i, j, k;
-    double f, rSqd, rSqdInv6, rSqdInv12;
-    double rij[3]; // position of i relative to j
+    double f, valSqd, valSqdInv6, valSqdInv12;
+    double acc[3]; // position of i relative to j
 
     for (i = 0; i < N; i++)
     { // set all accelerations to zero
@@ -511,24 +510,24 @@ void computeAccelerations()
         for (j = i + 1; j < N; j++)
         {
             // initialize r^2 to zero
-            rSqd = 0;
+            valSqd = 0;
             //  component-by-componenent position of i relative to j
-            rij[0] = r[i][0] - r[j][0];
-            rij[1] = r[i][1] - r[j][1];
-            rij[2] = r[i][2] - r[j][2];
+            acc[0] = r[i][0] - r[j][0];
+            acc[1] = r[i][1] - r[j][1];
+            acc[2] = r[i][2] - r[j][2];
             //  sum of squares of the components
-            rSqd = rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2];
+            valSqd = acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2];
 
             //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
-            rSqdInv6 = 1.0 / (rSqd * rSqd * rSqd * rSqd);
-            rSqdInv12 = rSqdInv6 * rSqdInv6 * rSqd;
-            f = 24 * (2 * rSqdInv12 - rSqdInv6);
+            valSqdInv6 = 1.0 / (valSqd * valSqd * valSqd * valSqd);
+            valSqdInv12 = valSqdInv6 * valSqdInv6 * valSqd;
+            f = 24 * (2 * valSqdInv12 - valSqdInv6);
 
             for (k = 0; k < 3; k++)
             {
                 //  from F = ma, where m = 1 in natural units!
-                a[i][k] += rij[k] * f;
-                a[j][k] -= rij[k] * f;
+                a[i][k] += acc[k] * f;
+                a[j][k] -= acc[k] * f;
             }
         }
     }

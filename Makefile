@@ -1,6 +1,6 @@
 CC = g++
 SRC = src/
-CFLAGS = -Wall -pg -O3 -ftree-vectorize
+CFLAGS = -Wall -pg -O3 -ftree-vectorizer-verbose=1
 
 .DEFAULT_GOAL = MD2.exe
 
