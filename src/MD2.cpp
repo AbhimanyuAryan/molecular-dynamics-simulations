@@ -83,7 +83,7 @@ double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
-void joinedPotentialComputeAcc();
+void calculatePotentialAndAcceleration();
 
 int main()
 {
@@ -272,7 +272,7 @@ int main()
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
     // FIX: computeAccelerations();
-    joinedPotentialComputeAcc();
+    calculatePotentialAndAcceleration();
 
     // Print number of particles to the trajectory file
     fprintf(tfp, "%i\n", N);
@@ -549,11 +549,11 @@ double Kinetic()
 //     }
 // }
 
-void joinedPotentialComputeAcc()
+void calculatePotentialAndAcceleration()
 {
     int i, j;
-    double f, rSqd, term1, term2;
-    double rij[3]; // position of i relative to j
+    double f, posSqrd, t1, t2;
+    double pos[3]; // position of i relative to j
 
     for (i = 0; i < N; i++)
     {
@@ -567,25 +567,23 @@ void joinedPotentialComputeAcc()
         for (j = i + 1; j < N; j++)
         {
             //  component-by-componenent position of i relative to j
-            rij[0] = r[i][0] - r[j][0];
-            rij[1] = r[i][1] - r[j][1];
-            rij[2] = r[i][2] - r[j][2];
+            pos[0] = r[i][0] - r[j][0];
+            pos[1] = r[i][1] - r[j][1];
+            pos[2] = r[i][2] - r[j][2];
 
-            rSqd = 1 / (rij[0] * rij[0] + rij[1] * rij[1] + rij[2] * rij[2]);
-
-            term2 = rSqd * rSqd * rSqd;
-            term1 = term2 * term2;
-            PE += 8 * epsilon * (term1 - term2);
-
-            f = term2 * rSqd * (48 * term2 - 24);
+            posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+            t2 = posSqrd * posSqrd * posSqrd;
+            t1 = t2 * t2;
+            PE += 8 * epsilon * (t1 - t2);
+            f = t2 * posSqrd * (48 * t2 - 24);
 
             //  from F = ma, where m = 1 in natural units!
-            a[i][0] += rij[0] * f;
-            a[j][0] -= rij[0] * f;
-            a[i][1] += rij[1] * f;
-            a[j][1] -= rij[1] * f;
-            a[i][2] += rij[2] * f;
-            a[j][2] -= rij[2] * f;
+            a[i][0] += pos[0] * f;
+            a[j][0] -= pos[0] * f;
+            a[i][1] += pos[1] * f;
+            a[j][1] -= pos[1] * f;
+            a[i][2] += pos[2] * f;
+            a[j][2] -= pos[2] * f;
         }
     }
 }
@@ -614,7 +612,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         // printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
-    joinedPotentialComputeAcc();
+    calculatePotentialAndAcceleration();
     //  Update velocity with updated acceleration
     for (i = 0; i < N; i++)
     {
