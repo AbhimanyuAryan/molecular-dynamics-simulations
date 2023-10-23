@@ -496,7 +496,7 @@ void computeAccelerations()
 {
     int i, j, k;
     double f, valSqd, valSqdInv6, valSqdInv12;
-    double acc[3]; // position of i relative to j
+    double pos[3]; // position of i relative to j
 
     for (i = 0; i < N; i++)
     { // set all accelerations to zero
@@ -512,11 +512,11 @@ void computeAccelerations()
             // initialize r^2 to zero
             valSqd = 0;
             //  component-by-componenent position of i relative to j
-            acc[0] = r[i][0] - r[j][0];
-            acc[1] = r[i][1] - r[j][1];
-            acc[2] = r[i][2] - r[j][2];
+            pos[0] = r[i][0] - r[j][0];
+            pos[1] = r[i][1] - r[j][1];
+            pos[2] = r[i][2] - r[j][2];
             //  sum of squares of the components
-            valSqd = acc[0] * acc[0] + acc[1] * acc[1] + acc[2] * acc[2];
+            valSqd = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];
 
             //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
             valSqdInv6 = 1.0 / (valSqd * valSqd * valSqd * valSqd);
@@ -526,8 +526,8 @@ void computeAccelerations()
             for (k = 0; k < 3; k++)
             {
                 //  from F = ma, where m = 1 in natural units!
-                a[i][k] += acc[k] * f;
-                a[j][k] -= acc[k] * f;
+                a[i][k] += pos[k] * f;
+                a[j][k] -= pos[k] * f;
             }
         }
     }
