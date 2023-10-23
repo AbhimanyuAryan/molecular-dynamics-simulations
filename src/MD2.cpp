@@ -93,8 +93,8 @@ int main()
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
     double VolFac, TempFac, PressFac, timefac;
     double KE, mvs, gc, Z;
-    char prefix[20], tfn[20], ofn[20], afn[20];
-    FILE *infp, *tfp, *ofp, *afp;
+    char prefix[35], tfn[35], ofn[35], afn[35];
+    FILE *tfp, *ofp, *afp;
 
     printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     printf("                  WELCOME TO WILLY P CHEM MD!\n");
@@ -552,8 +552,8 @@ double Kinetic()
 void calculatePotentialAndAcceleration()
 {
     int i, j;
-    double f, posSqrd, t1, t2;
-    double pos[3]; // position of i relative to j
+    double fvar, posSqrd, t1, t2;
+    double pos[3];
 
     for (i = 0; i < N; i++)
     {
@@ -563,10 +563,9 @@ void calculatePotentialAndAcceleration()
     }
     PE = 0.;
     for (i = 0; i < N - 1; i++)
-    { // loop over all distinct pairs i,j
+    {
         for (j = i + 1; j < N; j++)
         {
-            //  component-by-componenent position of i relative to j
             pos[0] = r[i][0] - r[j][0];
             pos[1] = r[i][1] - r[j][1];
             pos[2] = r[i][2] - r[j][2];
@@ -575,15 +574,14 @@ void calculatePotentialAndAcceleration()
             t2 = posSqrd * posSqrd * posSqrd;
             t1 = t2 * t2;
             PE += 8 * epsilon * (t1 - t2);
-            f = t2 * posSqrd * (48 * t2 - 24);
+            fvar = t2 * posSqrd * (48 * t2 - 24);
 
-            //  from F = ma, where m = 1 in natural units!
-            a[i][0] += pos[0] * f;
-            a[j][0] -= pos[0] * f;
-            a[i][1] += pos[1] * f;
-            a[j][1] -= pos[1] * f;
-            a[i][2] += pos[2] * f;
-            a[j][2] -= pos[2] * f;
+            a[i][0] += pos[0] * fvar;
+            a[j][0] -= pos[0] * fvar;
+            a[i][1] += pos[1] * fvar;
+            a[j][1] -= pos[1] * fvar;
+            a[i][2] += pos[2] * fvar;
+            a[j][2] -= pos[2] * fvar;
         }
     }
 }
@@ -591,7 +589,7 @@ void calculatePotentialAndAcceleration()
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp)
 {
-    int i, j, k;
+    int i, j;
 
     double psum = 0.;
 
