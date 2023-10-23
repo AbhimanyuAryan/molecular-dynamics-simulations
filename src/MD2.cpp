@@ -50,6 +50,8 @@ double Tinit; // 2;
 const int MAXPART = 5001;
 //  Position
 double r[MAXPART][3];
+// double r[MAXPART * 3];
+
 //  Velocity
 double v[MAXPART][3];
 //  Acceleration
@@ -389,6 +391,9 @@ void initialize()
                     r[p][0] = (i + 0.5) * pos;
                     r[p][1] = (j + 0.5) * pos;
                     r[p][2] = (k + 0.5) * pos;
+                    // r[p * 3 + 0] = (i + 0.5) * pos;
+                    // r[p * 3 + 1] = (j + 0.5) * pos;
+                    // r[p * 3 + 2] = (k + 0.5) * pos;
                 }
                 p++;
             }
@@ -473,6 +478,9 @@ double Potential()
             deltaX = r[particle1][0] - r[particle2][0];
             deltaY = r[particle1][1] - r[particle2][1];
             deltaZ = r[particle1][2] - r[particle2][2];
+            // deltaX = r[particle1 * 3 + 0] - r[particle2 * 3 + 0];
+            // deltaY = r[particle1 * 3 + 1] - r[particle2 * 3 + 1];
+            // deltaZ = r[particle1 * 3 + 2] - r[particle2 * 3 + 2];
 
             distanceSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
 
@@ -515,6 +523,10 @@ void computeAccelerations()
             pos[0] = r[i][0] - r[j][0];
             pos[1] = r[i][1] - r[j][1];
             pos[2] = r[i][2] - r[j][2];
+            // pos[0] = r[i * 3 + 0] - r[j * 3 + 0];
+            // pos[1] = r[i * 3 + 1] - r[j * 3 + 1];
+            // pos[2] = r[i * 3 + 2] - r[j * 3 + 2];
+
             //  sum of squares of the components
             valSqd = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];
 
@@ -550,6 +562,7 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         for (j = 0; j < 3; j++)
         {
             r[i][j] += v[i][j] * dt + 0.5 * a[i][j] * dt * dt;
+            // r[i * 3 + j] += v[i][j] * dt + 0.5 * a[i][j] * dt * dt;
 
             v[i][j] += 0.5 * a[i][j] * dt;
         }
@@ -572,11 +585,13 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         for (j = 0; j < 3; j++)
         {
             if (r[i][j] < 0.)
+            // if (r[i * 3 + j] < 0.)
             {
                 v[i][j] *= -1.;                     //- elastic walls
                 psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "left" walls
             }
             if (r[i][j] >= L)
+            // if (r[i * 3 + j] >= L)
             {
                 v[i][j] *= -1.;                     //- elastic walls
                 psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "right" walls

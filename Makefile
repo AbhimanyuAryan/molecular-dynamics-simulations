@@ -10,7 +10,7 @@ test:
 
 test2:
 	$(CC) $(CFLAGS) $(SRC)MD2.cpp -lm -o MD2.exe
-	srun --partition=cpar perf stat -e L1-dcache-load-misses -M cpi ./MD2.exe < inputdata.txt
+	srun --partition=cpar perf stat -e instructions,L1-dcache-load-misses -M cpi ./MD2.exe < inputdata.txt
 
 gprof1:
 	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
