@@ -36,6 +36,7 @@ double sigma = 1.;
 double epsilon = 1.;
 double m = 1.;
 double kB = 1.;
+double PE = 0.;
 
 double NA = 6.022140857e23;
 double kBSI = 1.38064852e-23; // m^2*kg/(s^2*K)
@@ -50,6 +51,8 @@ double Tinit; // 2;
 const int MAXPART = 5001;
 //  Position
 double r[MAXPART][3];
+// double r[MAXPART * 3];
+
 //  Velocity
 double v[MAXPART][3];
 //  Acceleration
@@ -68,7 +71,7 @@ void initialize();
 double VelocityVerlet(double dt, int iter, FILE *fp);
 //  Compute Force using F = -dV/dr
 //  solve F = ma for use in Velocity Verlet
-void computeAccelerations();
+
 //  Numerical Recipes function for generation gaussian distribution
 double gaussdist();
 //  Initialize velocities according to user-supplied initial Temperature (Tinit)
@@ -80,6 +83,9 @@ double MeanSquaredVelocity();
 //  Compute total kinetic energy from particle mass and velocities
 double Kinetic();
 
+// compute acceleration and potential merged
+void calculatePotentialAndAcceleration();
+
 int main()
 {
 
@@ -87,9 +93,9 @@ int main()
     int i;
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
     double VolFac, TempFac, PressFac, timefac;
-    double KE, PE, mvs, gc, Z;
-    char trash[10000], prefix[1000], tfn[1000], ofn[1000], afn[1000];
-    FILE *infp, *tfp, *ofp, *afp;
+    double KE, mvs, gc, Z;
+    char prefix[35], tfn[35], ofn[35], afn[35];
+    FILE *tfp, *ofp, *afp;
 
     printf("\n  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
     printf("                  WELCOME TO WILLY P CHEM MD!\n");
@@ -266,7 +272,8 @@ int main()
     //  Based on their positions, calculate the ininial intermolecular forces
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
-    computeAccelerations();
+    // FIX: computeAccelerations();
+    calculatePotentialAndAcceleration();
 
     // Print number of particles to the trajectory file
     fprintf(tfp, "%i\n", N);
@@ -318,7 +325,7 @@ int main()
         //  We would also like to use the IGL to try to see if we can extract the gas constant
         mvs = MeanSquaredVelocity();
         KE = Kinetic();
-        PE = Potential();
+        // PE = Potential();
 
         // Temperature from Kinetic Theory
         Temp = m * mvs / (3 * kB) * TempFac;
@@ -389,6 +396,9 @@ void initialize()
                     r[p][0] = (i + 0.5) * pos;
                     r[p][1] = (j + 0.5) * pos;
                     r[p][2] = (k + 0.5) * pos;
+                    // r[p * 3 + 0] = (i + 0.5) * pos;
+                    // r[p * 3 + 1] = (j + 0.5) * pos;
+                    // r[p * 3 + 2] = (k + 0.5) * pos;
                 }
                 p++;
             }
@@ -423,7 +433,6 @@ double MeanSquaredVelocity()
 
     for (int i = 0; i < N; i++)
     {
-
         vx2 = vx2 + v[i][0] * v[i][0];
         vy2 = vy2 + v[i][1] * v[i][1];
         vz2 = vz2 + v[i][2] * v[i][2];
@@ -458,76 +467,122 @@ double Kinetic()
 }
 
 // Function to calculate the potential energy of the system
-double Potential()
-{
-    double quot, r2, rnorm, term1, term2, Pot;
-    int i, j, k;
+// double Potential()
+// {
+//     double distanceSquared, sigmaOverDistSquared, termSquared, term, totalEnergy, deltaX, deltaY, deltaZ;
+//     int particle1, particle2;
 
-    Pot = 0.;
+//     totalEnergy = 0.0;
+
+//     // Loop through all pairs of particles
+//     for (particle1 = 0; particle1 < N; particle1++)
+//     {
+//         for (particle2 = particle1 + 1; particle2 < N; particle2++)
+//         {
+//             // Calculate squared distance between the two particles
+//             deltaX = r[particle1][0] - r[particle2][0];
+//             deltaY = r[particle1][1] - r[particle2][1];
+//             deltaZ = r[particle1][2] - r[particle2][2];
+//             // deltaX = r[particle1 * 3 + 0] - r[particle2 * 3 + 0];
+//             // deltaY = r[particle1 * 3 + 1] - r[particle2 * 3 + 1];
+//             // deltaZ = r[particle1 * 3 + 2] - r[particle2 * 3 + 2];
+
+//             distanceSquared = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
+
+//             // Compute terms for potential energy calculation
+//             sigmaOverDistSquared = sigma / distanceSquared;
+//             term = sigmaOverDistSquared * sigmaOverDistSquared * sigmaOverDistSquared;
+//             termSquared = term * term;
+
+//             totalEnergy += 4 * epsilon * (termSquared - term);
+//         }
+//     }
+
+//     // Return the total potential energy
+//     return 2.0 * totalEnergy;
+// }
+
+// //   Uses the derivative of the Lennard-Jones potential to calculate
+// //   the forces on each atom.  Then uses a = F/m to calculate the
+// //   accelleration of each atom.
+// void computeAccelerations()
+// {
+//     int i, j, k;
+//     double f, valSqd, valSqdInv6, valSqdInv12;
+//     double pos[3]; // position of i relative to j
+
+//     for (i = 0; i < N; i++)
+//     { // set all accelerations to zero
+//         a[i][0] = 0;
+//         a[i][1] = 0;
+//         a[i][2] = 0;
+//     }
+
+//     for (i = 0; i < N - 1; i++)
+//     { // loop over all distinct pairs i,j
+//         for (j = i + 1; j < N; j++)
+//         {
+//             // initialize r^2 to zero
+//             valSqd = 0;
+//             //  component-by-componenent position of i relative to j
+//             pos[0] = r[i][0] - r[j][0];
+//             pos[1] = r[i][1] - r[j][1];
+//             pos[2] = r[i][2] - r[j][2];
+//             // pos[0] = r[i * 3 + 0] - r[j * 3 + 0];
+//             // pos[1] = r[i * 3 + 1] - r[j * 3 + 1];
+//             // pos[2] = r[i * 3 + 2] - r[j * 3 + 2];
+
+//             //  sum of squares of the components
+//             valSqd = pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2];
+
+//             //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
+//             valSqdInv6 = 1.0 / (valSqd * valSqd * valSqd * valSqd);
+//             valSqdInv12 = valSqdInv6 * valSqdInv6 * valSqd;
+//             f = 24 * (2 * valSqdInv12 - valSqdInv6);
+
+//             for (k = 0; k < 3; k++)
+//             {
+//                 //  from F = ma, where m = 1 in natural units!
+//                 a[i][k] += pos[k] * f;
+//                 a[j][k] -= pos[k] * f;
+//             }
+//         }
+//     }
+// }
+
+void calculatePotentialAndAcceleration()
+{
+    int i, j;
+    double fvar, posSqrd, t1, t2;
+    double pos[3];
+
     for (i = 0; i < N; i++)
     {
-        for (j = 0; j < N; j++)
-        {
-
-            if (j != i)
-            {
-                r2 = 0.;
-                for (k = 0; k < 3; k++)
-                {
-                    r2 += (r[i][k] - r[j][k]) * (r[i][k] - r[j][k]);
-                }
-                rnorm = sqrt(r2);
-                quot = sigma / rnorm;
-                term1 = pow(quot, 12.);
-                term2 = pow(quot, 6.);
-
-                Pot += 4 * epsilon * (term1 - term2);
-            }
-        }
+        a[i][0] = 0;
+        a[i][1] = 0;
+        a[i][2] = 0;
     }
-
-    return Pot;
-}
-
-//   Uses the derivative of the Lennard-Jones potential to calculate
-//   the forces on each atom.  Then uses a = F/m to calculate the
-//   accelleration of each atom.
-void computeAccelerations()
-{
-    int i, j, k;
-    double f, rSqd;
-    double rij[3]; // position of i relative to j
-
-    for (i = 0; i < N; i++)
-    { // set all accelerations to zero
-        for (k = 0; k < 3; k++)
-        {
-            a[i][k] = 0;
-        }
-    }
+    PE = 0.;
     for (i = 0; i < N - 1; i++)
-    { // loop over all distinct pairs i,j
+    {
         for (j = i + 1; j < N; j++)
         {
-            // initialize r^2 to zero
-            rSqd = 0;
+            pos[0] = r[i][0] - r[j][0];
+            pos[1] = r[i][1] - r[j][1];
+            pos[2] = r[i][2] - r[j][2];
 
-            for (k = 0; k < 3; k++)
-            {
-                //  component-by-componenent position of i relative to j
-                rij[k] = r[i][k] - r[j][k];
-                //  sum of squares of the components
-                rSqd += rij[k] * rij[k];
-            }
+            posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+            t2 = posSqrd * posSqrd * posSqrd;
+            t1 = t2 * t2;
+            PE += 8 * epsilon * (t1 - t2);
+            fvar = t2 * posSqrd * (48 * t2 - 24);
 
-            //  From derivative of Lennard-Jones with sigma and epsilon set equal to 1 in natural units!
-            f = 24 * (2 * pow(rSqd, -7) - pow(rSqd, -4));
-            for (k = 0; k < 3; k++)
-            {
-                //  from F = ma, where m = 1 in natural units!
-                a[i][k] += rij[k] * f;
-                a[j][k] -= rij[k] * f;
-            }
+            a[i][0] += pos[0] * fvar;
+            a[j][0] -= pos[0] * fvar;
+            a[i][1] += pos[1] * fvar;
+            a[j][1] -= pos[1] * fvar;
+            a[i][2] += pos[2] * fvar;
+            a[j][2] -= pos[2] * fvar;
         }
     }
 }
@@ -535,7 +590,7 @@ void computeAccelerations()
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
 double VelocityVerlet(double dt, int iter, FILE *fp)
 {
-    int i, j, k;
+    int i, j;
 
     double psum = 0.;
 
@@ -549,13 +604,14 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         for (j = 0; j < 3; j++)
         {
             r[i][j] += v[i][j] * dt + 0.5 * a[i][j] * dt * dt;
+            // r[i * 3 + j] += v[i][j] * dt + 0.5 * a[i][j] * dt * dt;
 
             v[i][j] += 0.5 * a[i][j] * dt;
         }
         // printf("  %i  %6.4e   %6.4e   %6.4e\n",i,r[i][0],r[i][1],r[i][2]);
     }
     //  Update accellerations from updated positions
-    computeAccelerations();
+    calculatePotentialAndAcceleration();
     //  Update velocity with updated acceleration
     for (i = 0; i < N; i++)
     {
@@ -571,11 +627,13 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         for (j = 0; j < 3; j++)
         {
             if (r[i][j] < 0.)
+            // if (r[i * 3 + j] < 0.)
             {
                 v[i][j] *= -1.;                     //- elastic walls
                 psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "left" walls
             }
             if (r[i][j] >= L)
+            // if (r[i * 3 + j] >= L)
             {
                 v[i][j] *= -1.;                     //- elastic walls
                 psum += 2 * m * fabs(v[i][j]) / dt; // contribution to pressure from "right" walls
