@@ -525,26 +525,65 @@ double Kinetic()
 //     }
 // }
 
+// void calculatePotentialAndAcceleration()
+// {
+//     int i, j;
+//     double fvar, posSqrd, t1, t2;
+//     double pos[3];
+
+//     for (i = 0; i < N; i++)
+//     {
+//         a[i][0] = 0;
+//         a[i][1] = 0;
+//         a[i][2] = 0;
+//     }
+//     PE = 0.;
+//     for (i = 0; i < N - 1; i++)
+//     {
+//         for (j = i + 1; j < N; j++)
+//         {
+//             pos[0] = r[i][0] - r[j][0];
+//             pos[1] = r[i][1] - r[j][1];
+//             pos[2] = r[i][2] - r[j][2];
+
+//             posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+//             t2 = posSqrd * posSqrd * posSqrd;
+//             t1 = t2 * t2;
+//             PE += 8 * epsilon * (t1 - t2);
+//             fvar = t2 * posSqrd * (48 * t2 - 24);
+
+//             a[i][0] += pos[0] * fvar;
+//             a[j][0] -= pos[0] * fvar;
+//             a[i][1] += pos[1] * fvar;
+//             a[j][1] -= pos[1] * fvar;
+//             a[i][2] += pos[2] * fvar;
+//             a[j][2] -= pos[2] * fvar;
+//         }
+//     }
+// }
+
 void calculatePotentialAndAcceleration()
 {
-    int i, j;
+    int i, j, k;
     double fvar, posSqrd, t1, t2;
     double pos[3];
 
     for (i = 0; i < N; i++)
     {
-        a[i][0] = 0;
-        a[i][1] = 0;
-        a[i][2] = 0;
+        for (k = 0; k < 3; k++)
+        {
+            a[i][k] = 0;
+        }
     }
     PE = 0.;
     for (i = 0; i < N - 1; i++)
     {
         for (j = i + 1; j < N; j++)
         {
-            pos[0] = r[i][0] - r[j][0];
-            pos[1] = r[i][1] - r[j][1];
-            pos[2] = r[i][2] - r[j][2];
+            for (k = 0; k < 3; k++)
+            {
+                pos[k] = r[i][k] - r[j][k];
+            }
 
             posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
             t2 = posSqrd * posSqrd * posSqrd;
@@ -552,12 +591,11 @@ void calculatePotentialAndAcceleration()
             PE += 8 * epsilon * (t1 - t2);
             fvar = t2 * posSqrd * (48 * t2 - 24);
 
-            a[i][0] += pos[0] * fvar;
-            a[j][0] -= pos[0] * fvar;
-            a[i][1] += pos[1] * fvar;
-            a[j][1] -= pos[1] * fvar;
-            a[i][2] += pos[2] * fvar;
-            a[j][2] -= pos[2] * fvar;
+            for (k = 0; k < 3; k++)
+            {
+                a[i][k] += pos[k] * fvar;
+                a[j][k] -= pos[k] * fvar;
+            }
         }
     }
 }
