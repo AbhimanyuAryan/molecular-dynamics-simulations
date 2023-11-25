@@ -1,6 +1,6 @@
 CC = gcc
 SRC = src/
-CFLAGS = # select optimization flags (e.g., O2 or O3)
+CFLAGS = -Ofast -ftree-vectorize
 
 .DEFAULT_GOAL = all
 
