@@ -1,35 +1,17 @@
-CC = g++
+CC = gcc
 SRC = src/
-CFLAGS = -Wall -pg -Ofast -ftree-vectorize -pg
-
-.DEFAULT_GOAL = MD2.exe
-
-test:
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
-	srun --partition=cpar perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
-
-test2:
-	$(CC) $(CFLAGS) $(SRC)MD2.cpp -lm -o MD2.exe
-	srun --partition=cpar perf stat -e instructions,L1-dcache-load-misses -M cpi ./MD2.exe < inputdata.txt
-
-test3:
-	$(CC) $(CFLAGS) $(SRC)MD3.cpp -lm -o MD3.exe
-	srun --partition=cpar perf stat -e instructions,L1-dcache-load-misses -M cpi ./MD3.exe < inputdata.txt
-
-gprof1:
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
-	./MD.exe < inputdata.txt
-	gprof MD.exe gmon.out > analysis1.txt
-	cat analysis1.txt
-
-gprof2:
-	$(CC) $(CFLAGS) $(SRC)MD2.cpp -lm -o MD2.exe
-	./MD2.exe < inputdata.txt
-	gprof MD2.exe gmon.out > analysis2.txt
-	cat analysis2.txt
-
+CFLAGS = # select optimization flags (e.g., O2 or O3)
+.DEFAULT_GOAL = all
+all: MDseq.exe MDpar.exe
+MDseq.exe: $(SRC)/MDseq.cpp
+module load gcc/11.2.0;
+$(CC) $(CFLAGS) $(SRC)MDseq.cpp -lm -o MDseq.exe
+MDpar.exe: $(SRC)/MDpar.cpp
+module load gcc/11.2.0;
+$(CC) $(CFLAGS) $(SRC)MDpar.cpp -lm -fopenmp -o MDpar.exe
 clean:
-	find . -type f \( ! -path "./src/*" ! -name "Makefile" ! -name "inputdata.txt" \) -exec rm -v {} \;
-
-run:
-	./MD.exe < inputdata.txt
+rm ./MD*.exe
+runseq:
+./MDseq.exe < inputdata.txt
+runpar:
+./MDpar.exe < inputdata.txt
