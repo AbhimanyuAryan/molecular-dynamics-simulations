@@ -1,6 +1,6 @@
 CC = gcc
 SRC = src/
-CFLAGS = -Ofast -ftree-vectorize
+CFLAGS = -Ofast -ftree-vectorize -mavx
 
 .DEFAULT_GOAL = all
 
