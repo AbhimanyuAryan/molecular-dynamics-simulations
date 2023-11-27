@@ -444,63 +444,50 @@ double Kinetic()
 
 void calculatePotentialAndAcceleration()
 {
-    int i, j, k;
-    double posSqrd, t1, t2;
-    double pos[3], local_a[N][3], fvar;
+    memset(a, 0, sizeof(a));
+    PE = 0.0;
 
-    // Initialize local acceleration array
-    for (i = 0; i < N; i++)
+#pragma omp parallel
     {
-        for (k = 0; k < 3; k++)
+        double local_PE = 0.0;
+        double local_a[N][3];
+        memset(local_a, 0, sizeof(local_a));
+
+#pragma omp for nowait
+        for (int i = 0; i < N - 1; i++)
         {
-            local_a[i][k] = 0;
-        }
-    }
-
-    double local_PE = 0.;
-
-#pragma omp parallel for private(j, k, pos, posSqrd, t1, t2, fvar) reduction(+ : local_PE)
-    for (i = 0; i < N - 1; i++)
-    {
-        double temp_a[3] = {0, 0, 0}; // Temporary array to store acceleration for particle i
-
-        for (j = i + 1; j < N; j++)
-        {
-            for (k = 0; k < 3; k++)
+            for (int j = i + 1; j < N; j++)
             {
-                pos[k] = r[i][k] - r[j][k];
-            }
+                double pos[3], posSqrd, t1, t2, fvar;
+                for (int k = 0; k < 3; k++)
+                {
+                    pos[k] = r[i][k] - r[j][k];
+                }
 
-            posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
-            t2 = posSqrd * posSqrd * posSqrd;
-            t1 = t2 * t2;
-            local_PE += 8 * epsilon * (t1 - t2);
-            fvar = t2 * posSqrd * (48 * t2 - 24);
+                posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+                t2 = posSqrd * posSqrd * posSqrd;
+                t1 = t2 * t2;
+                local_PE += 8 * epsilon * (t1 - t2);
+                fvar = t2 * posSqrd * (48 * t2 - 24);
 
-            for (k = 0; k < 3; k++)
-            {
-                temp_a[k] += pos[k] * fvar;
-#pragma omp atomic
-                local_a[j][k] -= pos[k] * fvar;
+                for (int k = 0; k < 3; k++)
+                {
+                    local_a[i][k] += pos[k] * fvar;
+                    local_a[j][k] -= pos[k] * fvar;
+                }
             }
         }
 
-        for (k = 0; k < 3; k++)
-        {
-#pragma omp atomic
-            local_a[i][k] += temp_a[k];
-        }
-    }
-
-// Update global acceleration and potential energy
+// Combine local results into global variables
 #pragma omp critical
-    {
-        PE += local_PE;
-        for (i = 0; i < N; i++)
         {
-            for (k = 0; k < 3; k++)
+            PE += local_PE;
+            for (int i = 0; i < N; i++)
             {
-                a[i][k] = local_a[i][k];
+                for (int k = 0; k < 3; k++)
+                {
+                    a[i][k] += local_a[i][k];
+                }
             }
         }
     }
