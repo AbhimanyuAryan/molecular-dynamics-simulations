@@ -1,7 +1,7 @@
 CC = gcc
 SRC = src/
 NCORES = 40
-CFLAGS = -Ofast -ftree-vectorize
+CFLAGS = -Werror -Ofast -fno-omit-frame-pointer -ftree-vectorize -mavx -g -fopt-info-vec-all
 
 .DEFAULT_GOAL = all
 
