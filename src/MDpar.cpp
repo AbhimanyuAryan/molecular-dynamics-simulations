@@ -444,6 +444,7 @@ double Kinetic()
 
 void calculatePotentialAndAcceleration()
 {
+    // Initialize acceleration array to zero
     memset(a, 0, sizeof(a));
     PE = 0.0;
 
@@ -478,16 +479,20 @@ void calculatePotentialAndAcceleration()
             }
         }
 
-// Combine local results into global variables
-#pragma omp critical
+// Using atomic to update PE
+#pragma omp atomic
+        PE += local_PE;
+
+// Wait for all threads to reach this point before updating the global acceleration array
+#pragma omp barrier
+
+        // Update global acceleration array
+        for (int i = 0; i < N; i++)
         {
-            PE += local_PE;
-            for (int i = 0; i < N; i++)
+            for (int k = 0; k < 3; k++)
             {
-                for (int k = 0; k < 3; k++)
-                {
-                    a[i][k] += local_a[i][k];
-                }
+#pragma omp atomic
+                a[i][k] += local_a[i][k];
             }
         }
     }
