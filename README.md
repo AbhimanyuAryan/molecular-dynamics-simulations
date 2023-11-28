@@ -9,10 +9,6 @@ Compile the program
 make all
 ```
 
-```
-sbatch 
-```
-
 To run and test
 ```
 srun --partition cpar --cpus-per-task=4 --time=01:00 make runpar
