@@ -1,35 +1,26 @@
-CC = g++
+CC = gcc
 SRC = src/
-CFLAGS = -Wall -pg -Ofast -ftree-vectorize -pg
+NCORES = 40
+CFLAGS = -Werror -Ofast -fno-omit-frame-pointer -ftree-vectorize -mavx -g -fopt-info-vec-all
 
-.DEFAULT_GOAL = MD2.exe
+.DEFAULT_GOAL = all
 
-test:
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
-	srun --partition=cpar perf stat -e L1-dcache-load-misses -M cpi ./MD.exe < inputdata.txt
+all: MDseq.exe MDpar.exe
 
-test2:
-	$(CC) $(CFLAGS) $(SRC)MD2.cpp -lm -o MD2.exe
-	srun --partition=cpar perf stat -e instructions,L1-dcache-load-misses -M cpi ./MD2.exe < inputdata.txt
+MDseq.exe: $(SRC)/MDseq.cpp
+	module load gcc/11.2.0;\
+	$(CC) $(CFLAGS) $(SRC)MDseq.cpp -lm -o MDseq.exe
 
-test3:
-	$(CC) $(CFLAGS) $(SRC)MD3.cpp -lm -o MD3.exe
-	srun --partition=cpar perf stat -e instructions,L1-dcache-load-misses -M cpi ./MD3.exe < inputdata.txt
-
-gprof1:
-	$(CC) $(CFLAGS) $(SRC)MD.cpp -lm -o MD.exe
-	./MD.exe < inputdata.txt
-	gprof MD.exe gmon.out > analysis1.txt
-	cat analysis1.txt
-
-gprof2:
-	$(CC) $(CFLAGS) $(SRC)MD2.cpp -lm -o MD2.exe
-	./MD2.exe < inputdata.txt
-	gprof MD2.exe gmon.out > analysis2.txt
-	cat analysis2.txt
+MDpar.exe: $(SRC)/MDpar.cpp
+	module load gcc/11.2.0;\
+	$(CC) $(CFLAGS) $(SRC)MDpar.cpp -lm -fopenmp -o MDpar.exe
 
 clean:
-	find . -type f \( ! -path "./src/*" ! -name "Makefile" ! -name "inputdata.txt" \) -exec rm -v {} \;
+	rm ./MD*.exe
 
-run:
-	./MD.exe < inputdata.txt
+runseq: MDseq.exe
+	./MDseq.exe < inputdata.txt
+
+runpar: MDpar.exe
+	export OMP_NUM_THREADS=2;\
+	./MDpar.exe < inputdata.txt
