@@ -533,16 +533,6 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
         }
     }
 
-    /* removed, uncomment to save atoms positions */
-    /*for (i=0; i<N; i++) {
-        fprintf(fp,"%s",atype);
-        for (j=0; j<3; j++) {
-            fprintf(fp,"  %12.10e ",r[i][j]);
-        }
-        fprintf(fp,"\n");
-    }*/
-    // fprintf(fp,"\n \n");
-
     return psum / (6 * L * L);
 }
 
