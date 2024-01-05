@@ -1,3 +1,6 @@
 #!/bin/bash
-export OMP_NUM_THREADS=$1
-perf stat -e L1-dcache-load-misses -M cpi ./MDseq.exe < inputdata.txt
+#SBATCH --time=1:00
+#SBATCH --partition=cpar
+#SBATCH --constraint=k20
+
+nvprof ./bin/stencil

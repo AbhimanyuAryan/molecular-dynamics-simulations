@@ -1,22 +1,17 @@
-follow these standards for report:
-
-https://github.com/L-Pinto/UMinho-MEI/blob/main/I/CP/Report-BucketSort.pdf
-
-
-Compile the program
-
-```bash
-make all
+Load Modules
+```
+module load gcc/7.2.0
+module load cuda/11.3.1
 ```
 
-To run and test
+Building output files
 ```
-srun --partition cpar --cpus-per-task=4 --time=01:00 make runpar
+make
 ```
 
-Run for slurm
+Run nvprof
 ```
-sbatch script.sh
+sbatch run.sh
 ```
 
 Checkout output
