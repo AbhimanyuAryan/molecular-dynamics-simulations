@@ -1,5 +1,5 @@
 SHELL = /bin/sh
-BIN_NAME = stencil
+BIN_NAME = md
 
 CXX = nvcc
 LD  = nvcc
