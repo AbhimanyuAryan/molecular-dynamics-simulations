@@ -4,6 +4,10 @@
 #include <math.h>
 #include <string.h>
 
+#define NUM_BLOCKS 128
+#define NUM_THREADS_PER_BLOCK 256
+#define SIZE NUM_BLOCKS *NUM_THREADS_PER_BLOCK
+
 // Number of particles
 int N;
 
@@ -21,14 +25,11 @@ double kBSI = 1.38064852e-23; // m^2*kg/(s^2*K)
 double L;
 
 //  Initial Temperature in Natural Units
-double Tinit; // 2;
-//  Vectors!
-//
+double Tinit;
 const int MAXPART = 5001;
+
 //  Position
 double r[MAXPART][3];
-// double r[MAXPART * 3];
-
 //  Velocity
 double v[MAXPART][3];
 //  Acceleration
@@ -64,7 +65,6 @@ void calculatePotentialAndAcceleration();
 
 int main()
 {
-
     //  variable delcarations
     int i;
     double dt, Vol, Temp, Press, Pavg, Tavg, rho;
@@ -425,42 +425,68 @@ double Kinetic()
     return kin;
 }
 
+// Kernel function to calculate forces and potential energy in parallel
+__global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < N - 1)
+    {
+        for (int j = i + 1; j < N; j++)
+        {
+            double pos[3];
+            for (int k = 0; k < 3; k++)
+            {
+                pos[k] = r_dev[i * 3 + k] - r_dev[j * 3 + k];
+            }
+
+            double posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+            double t2 = posSqrd * posSqrd * posSqrd;
+            double t1 = t2 * t2;
+
+            atomicAdd(PE_dev, 8 * epsilon * (t1 - t2));
+
+            double fvar = t2 * posSqrd * (48 * t2 - 24);
+
+            for (int k = 0; k < 3; k++)
+            {
+                atomicAdd(&a_dev[i * 3 + k], pos[k] * fvar);
+                atomicAdd(&a_dev[j * 3 + k], -pos[k] * fvar);
+            }
+        }
+    }
+}
+
 void calculatePotentialAndAcceleration()
 {
-    int i, j, k;
-    double fvar, posSqrd, t1, t2;
-    double pos[3];
+    // Device variables
+    double *r_dev, *a_dev, *PE_dev;
 
-    for (i = 0; i < N; i++)
-    {
-        for (k = 0; k < 3; k++)
-        {
-            a[i][k] = 0;
-        }
-    }
-    PE = 0.;
-    for (i = 0; i < N - 1; i++)
-    {
-        for (j = i + 1; j < N; j++)
-        {
-            for (k = 0; k < 3; k++)
-            {
-                pos[k] = r[i][k] - r[j][k];
-            }
+    // Allocate device(GPU) memory
+    cudaMalloc((void **)&r_dev, sizeof(double) * N * 3);
+    cudaMalloc((void **)&a_dev, sizeof(double) * N * 3);
+    cudaMalloc((void **)&PE_dev, sizeof(double));
 
-            posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
-            t2 = posSqrd * posSqrd * posSqrd;
-            t1 = t2 * t2;
-            PE += 8 * epsilon * (t1 - t2);
-            fvar = t2 * posSqrd * (48 * t2 - 24);
+    // Copy data from host to device
+    cudaMemcpy(r_dev, r, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
+    cudaMemcpy(a_dev, a, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
+    cudaMemcpy(PE_dev, &PE, sizeof(double), cudaMemcpyHostToDevice);
 
-            for (k = 0; k < 3; k++)
-            {
-                a[i][k] += pos[k] * fvar;
-                a[j][k] -= pos[k] * fvar;
-            }
-        }
-    }
+    // Define block and grid dimensions
+    dim3 threadsPerBlock(NUM_THREADS_PER_BLOCK);
+    dim3 blocksPerGrid(NUM_BLOCKS);
+
+    // Call the CUDA kernel
+    calculateForcesAndEnergy<<<blocksPerGrid, threadsPerBlock>>>(r_dev, a_dev, PE_dev, N);
+
+    // Copy results from device to host
+    cudaMemcpy(&PE, PE_dev, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(a, a_dev, sizeof(double) * N * 3, cudaMemcpyDeviceToHost);
+
+    // Free device memory
+    cudaFree(r_dev);
+    cudaFree(a_dev);
+    cudaFree(PE_dev);
 }
 
 // returns sum of dv/dt*m/A (aka Pressure) from elastic collisions with walls
