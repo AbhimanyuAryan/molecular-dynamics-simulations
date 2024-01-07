@@ -248,7 +248,6 @@ int main()
     //  Based on their positions, calculate the ininial intermolecular forces
     //  The accellerations of each particle will be defined from the forces and their
     //  mass, and this will allow us to update their positions via Newton's law
-    // FIX: computeAccelerations();
     calculatePotentialAndAcceleration();
 
     // Print number of particles to the trajectory file
@@ -372,9 +371,6 @@ void initialize()
                     r[p][0] = (i + 0.5) * pos;
                     r[p][1] = (j + 0.5) * pos;
                     r[p][2] = (k + 0.5) * pos;
-                    // r[p * 3 + 0] = (i + 0.5) * pos;
-                    // r[p * 3 + 1] = (j + 0.5) * pos;
-                    // r[p * 3 + 2] = (k + 0.5) * pos;
                 }
                 p++;
             }
@@ -383,19 +379,6 @@ void initialize()
 
     // Call function to initialize velocities
     initializeVelocities();
-
-    /***********************************************
-     *   Uncomment if you want to see what the initial positions and velocities are
-     printf("  Printing initial positions!\n");
-     for (i=0; i<N; i++) {
-     printf("  %6.3e  %6.3e  %6.3e\n",r[i][0],r[i][1],r[i][2]);
-     }
-
-     printf("  Printing initial velocities!\n");
-     for (i=0; i<N; i++) {
-     printf("  %6.3e  %6.3e  %6.3e\n",v[i][0],v[i][1],v[i][2]);
-     }
-     */
 }
 
 //  Function to calculate the averaged velocity squared
@@ -533,16 +516,6 @@ double VelocityVerlet(double dt, int iter, FILE *fp)
             }
         }
     }
-
-    /* removed, uncomment to save atoms positions */
-    /*for (i=0; i<N; i++) {
-        fprintf(fp,"%s",atype);
-        for (j=0; j<3; j++) {
-            fprintf(fp,"  %12.10e ",r[i][j]);
-        }
-        fprintf(fp,"\n");
-    }*/
-    // fprintf(fp,"\n \n");
 
     return psum / (6 * L * L);
 }
