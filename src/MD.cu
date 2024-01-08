@@ -518,6 +518,12 @@ void calculatePotentialAndAcceleration()
     cudaMalloc((void **)&a_dev, sizeof(double) * N * 3);
     cudaMalloc((void **)&PE_dev, sizeof(double));
 
+    // Set initial values of a_dev to 0
+    cudaMemset(a_dev, 0, sizeof(double) * N * 3);
+
+    // Set initial value of PE_dev to 0
+    cudaMemset(PE_dev, 0, sizeof(double));
+
     // Copy data from host to device
     cudaMemcpy(r_dev, r, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
     cudaMemcpy(a_dev, a, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
