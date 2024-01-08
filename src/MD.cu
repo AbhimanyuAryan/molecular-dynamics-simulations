@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <cuda_runtime.h>
 
 #define NUM_BLOCKS 128
 #define NUM_THREADS_PER_BLOCK 256
@@ -456,13 +457,41 @@ double Kinetic()
     return kin;
 }
 
-// Kernel function to calculate forces and potential energy in parallel
+__device__ double atomicAdd_double(double *address, double val)
+{
+    unsigned long long int *address_as_ull =
+        (unsigned long long int *)address;
+    unsigned long long int old = *address_as_ull, assumed;
+
+    do
+    {
+        assumed = old;
+        old = atomicCAS(address_as_ull, assumed,
+                        __double_as_longlong(val +
+                                             __longlong_as_double(assumed)));
+    } while (assumed != old);
+
+    return __longlong_as_double(old);
+}
+
+// Helper function for reduction
+__device__ double warpReduceSum(double val)
+{
+    for (int offset = warpSize / 2; offset > 0; offset /= 2)
+    {
+        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
+    }
+    return val;
+}
+
 __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N, double epsilon)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i < N - 1)
     {
+        double PE_local = 0.0;
+
         for (int j = i + 1; j < N; j++)
         {
             double pos[3];
@@ -475,15 +504,23 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
             double t2 = posSqrd * posSqrd * posSqrd;
             double t1 = t2 * t2;
 
-            atomicAdd(PE_dev, 8 * epsilon * (t1 - t2));
+            PE_local += 8 * epsilon * (t1 - t2);
 
             double fvar = t2 * posSqrd * (48 * t2 - 24);
 
             for (int k = 0; k < 3; k++)
             {
-                atomicAdd(&a_dev[i * 3 + k], pos[k] * fvar);
-                atomicAdd(&a_dev[j * 3 + k], -pos[k] * fvar);
+                a_dev[i * 3 + k] += pos[k] * fvar;
+                a_dev[j * 3 + k] -= pos[k] * fvar;
             }
+        }
+
+        // Reduction to calculate total potential energy
+        PE_local = warpReduceSum(PE_local);
+
+        if (threadIdx.x % warpSize == 0)
+        {
+            atomicAdd_double(PE_dev, PE_local);
         }
     }
 }
