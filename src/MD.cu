@@ -480,6 +480,8 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
 
     if (i < N - 1)
     {
+        double PE_local = 0.0; // Accumulate potential energy locally
+
         for (int j = i + 1; j < N; j++)
         {
             double pos[3];
@@ -492,6 +494,8 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
             double t2 = posSqrd * posSqrd * posSqrd;
             double t1 = t2 * t2;
 
+            PE_local += 8 * epsilon * (t1 - t2);
+
             double fvar = t2 * posSqrd * (48 * t2 - 24);
 
             for (int k = 0; k < 3; k++)
@@ -499,9 +503,10 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
                 atomicAdd_double(&a_dev[i * 3 + k], pos[k] * fvar);
                 atomicAdd_double(&a_dev[j * 3 + k], -pos[k] * fvar);
             }
-
-            atomicAdd_double(PE_dev, 8 * epsilon * (t1 - t2));
         }
+
+        // Update global potential energy using atomic add
+        atomicAdd_double(PE_dev, PE_local);
     }
 }
 
@@ -519,6 +524,12 @@ void calculatePotentialAndAcceleration()
     cudaMemcpy(r_dev, r, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
     cudaMemcpy(a_dev, a, sizeof(double) * N * 3, cudaMemcpyHostToDevice);
     cudaMemcpy(PE_dev, &PE, sizeof(double), cudaMemcpyHostToDevice);
+
+    // Set initial values of a_dev to 0
+    cudaMemset(a_dev, 0, sizeof(double) * N * 3);
+
+    // Set initial value of PE_dev to 0
+    cudaMemset(PE_dev, 0, sizeof(double));
 
     // Define block and grid dimensions
     dim3 threadsPerBlock(NUM_THREADS_PER_BLOCK);
