@@ -63,6 +63,37 @@ double Kinetic();
 // compute acceleration and potential merged
 void calculatePotentialAndAcceleration();
 
+void checkCUDAError(const char *msg)
+{
+    cudaError_t err = cudaGetLastError();
+    if (cudaSuccess != err)
+    {
+        cerr << "Cuda error: " << msg << ", " << cudaGetErrorString(err) << endl;
+        exit(-1);
+    }
+}
+
+void startKernelTime(void)
+{
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    cudaEventRecord(start);
+}
+
+void stopKernelTime(void)
+{
+    cudaEventRecord(stop);
+
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    cout << endl
+         << "Basic profiling: " << milliseconds << " ms have elapsed for the kernel execution" << endl
+         << endl;
+}
+
 int main()
 {
     //  variable delcarations
@@ -426,7 +457,7 @@ double Kinetic()
 }
 
 // Kernel function to calculate forces and potential energy in parallel
-__global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N)
+__global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N, double epsilon)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -477,7 +508,7 @@ void calculatePotentialAndAcceleration()
     dim3 blocksPerGrid(NUM_BLOCKS);
 
     // Call the CUDA kernel
-    calculateForcesAndEnergy<<<blocksPerGrid, threadsPerBlock>>>(r_dev, a_dev, PE_dev, N);
+    calculateForcesAndEnergy<<<blocksPerGrid, threadsPerBlock>>>(r_dev, a_dev, PE_dev, N, epsilon);
 
     // Copy results from device to host
     cudaMemcpy(&PE, PE_dev, sizeof(double), cudaMemcpyDeviceToHost);
