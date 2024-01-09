@@ -222,7 +222,7 @@ int main()
 
     scanf("%lf", &rho);
 
-    N = 5000;
+    N = 5000; // 2500,5000,10000,20000
     Vol = N / (rho * NA);
 
     Vol /= VolFac;

@@ -63,3 +63,6 @@ Running with input file: inputdata.txt
   TOTAL VOLUME (m^3):                      2.37220e-25 
 
   NUMBER OF PARTICLES (unitless):          5000 
+real 13.11
+user 7.64
+sys 4.26

@@ -50,16 +50,19 @@ Running with input file: inputdata.txt
   THE FOLLOWING THERMODYNAMIC AVERAGES WILL BE COMPUTED AND WRITTEN TO THE FILE  
   'cp_average.txt':
 
-  AVERAGE TEMPERATURE (K):                       131.45506
+  AVERAGE TEMPERATURE (K):                        98.46177
 
-  AVERAGE PRESSURE  (Pa):                  131001228.45076
+  AVERAGE PRESSURE  (Pa):                   38579227.19035
 
-  PV/nT (J * mol^-1 K^-1):                        28.47279
+  PV/nT (J * mol^-1 K^-1):                        11.19484
 
-  PERCENT ERROR of pV/nT AND GAS CONSTANT:       242.44905
+  PERCENT ERROR of pV/nT AND GAS CONSTANT:        34.64300
 
-  THE COMPRESSIBILITY (unitless):                  3.42449 
+  THE COMPRESSIBILITY (unitless):                  1.34643 
 
-  TOTAL VOLUME (m^3):                      2.37220e-25 
+  TOTAL VOLUME (m^3):                      4.74440e-25 
 
-  NUMBER OF PARTICLES (unitless):          5000 
+  NUMBER OF PARTICLES (unitless):          10000 
+real 30.07
+user 19.51
+sys 9.35
