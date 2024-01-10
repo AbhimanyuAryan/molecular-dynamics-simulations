@@ -5,6 +5,7 @@
 #include <string.h>
 #include <cuda_runtime.h>
 
+// 1st configuration
 #define NUM_BLOCKS 128
 #define NUM_THREADS_PER_BLOCK 256
 #define SIZE NUM_BLOCKS *NUM_THREADS_PER_BLOCK
@@ -486,12 +487,12 @@ __device__ double atomicAdd_double(double *address, double val)
 
 __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N, double epsilon)
 {
+    __shared__ double PE_local[NUM_THREADS_PER_BLOCK]; // Shared memory for each block
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+    PE_local[threadIdx.x] = 0.0; // Initialize local PE
 
     if (i < N - 1)
     {
-        double PE_local = 0.0; // Accumulate potential energy locally
-
         for (int j = i + 1; j < N; j++)
         {
             double pos[3];
@@ -504,7 +505,7 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
             double t2 = posSqrd * posSqrd * posSqrd;
             double t1 = t2 * t2;
 
-            PE_local += 8 * epsilon * (t1 - t2);
+            PE_local[threadIdx.x] += 8 * epsilon * (t1 - t2);
 
             double fvar = t2 * posSqrd * (48 * t2 - 24);
 
@@ -515,10 +516,61 @@ __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *P
             }
         }
 
-        // Update global potential energy using atomic add
-        atomicAdd_double(PE_dev, PE_local);
+        __syncthreads(); // Ensure all threads in the block have finished updating PE_local
+
+        // Use a reduction pattern to accumulate PE_local
+        for (int stride = blockDim.x / 2; stride > 0; stride /= 2)
+        {
+            if (threadIdx.x < stride)
+            {
+                PE_local[threadIdx.x] += PE_local[threadIdx.x + stride];
+            }
+            __syncthreads(); // Ensure all threads in the block have finished this step
+        }
+
+        // Update global PE_dev using atomic add
+        if (threadIdx.x == 0)
+        {
+            atomicAdd_double(PE_dev, PE_local[0]);
+        }
     }
 }
+
+// __global__ void calculateForcesAndEnergy(double *r_dev, double *a_dev, double *PE_dev, int N, double epsilon)
+// {
+//     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+//     if (i < N - 1)
+//     {
+//         double PE_local = 0.0; // Accumulate potential energy locally
+
+//         for (int j = i + 1; j < N; j++)
+//         {
+//             double pos[3];
+//             for (int k = 0; k < 3; k++)
+//             {
+//                 pos[k] = r_dev[i * 3 + k] - r_dev[j * 3 + k];
+//             }
+
+//             double posSqrd = 1 / (pos[0] * pos[0] + pos[1] * pos[1] + pos[2] * pos[2]);
+//             double t2 = posSqrd * posSqrd * posSqrd;
+//             double t1 = t2 * t2;
+
+//             PE_local += 8 * epsilon * (t1 - t2);
+
+//             double fvar = t2 * posSqrd * (48 * t2 - 24);
+
+//             for (int k = 0; k < 3; k++)
+//             {
+//                 atomicAdd_double(&a_dev[i * 3 + k], pos[k] * fvar);
+//                 atomicAdd_double(&a_dev[j * 3 + k], -pos[k] * fvar);
+//             }
+//         }
+
+//         // Update global potential energy using atomic add
+//         atomicAdd_double(PE_dev, PE_local);
+//     }
+// }
 
 void calculatePotentialAndAcceleration()
 {
