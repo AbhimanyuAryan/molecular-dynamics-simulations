@@ -33,5 +33,8 @@ checkdirs:
 
 all: checkdirs $(BIN_DIR)/$(BIN_NAME)
 
+run: all
+	sbatch run.sh
+
 clean:
 	rm -f $(BUILD_DIR)/* $(BIN_DIR)/* 
