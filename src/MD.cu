@@ -9,6 +9,16 @@
 #define NUM_THREADS_PER_BLOCK 256
 #define SIZE NUM_BLOCKS *NUM_THREADS_PER_BLOCK
 
+// 2nd configuration
+// #define NUM_BLOCKS 13             // One block per multiprocessor
+// #define NUM_THREADS_PER_BLOCK 192 // One thread per CUDA core
+// #define SIZE NUM_BLOCKS *NUM_THREADS_PER_BLOCK
+
+// 3rd configuration
+// #define NUM_BLOCKS 26             // Two blocks per multiprocessor
+// #define NUM_THREADS_PER_BLOCK 128 // Moderate number of threads per block
+// #define SIZE NUM_BLOCKS *NUM_THREADS_PER_BLOCK
+
 // Number of particles
 int N;
 
